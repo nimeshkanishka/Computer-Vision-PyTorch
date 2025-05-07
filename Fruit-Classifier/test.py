@@ -38,6 +38,7 @@ for idx, img in enumerate(os.listdir(IMAGE_FOLDER)):
         plt.imshow(img_array)
         plt.title(f"Prediction: {pred_category} - Confidence: {confidence:.2f}%")
         plt.axis("off")
+        plt.savefig(f"Fruit-Classifier/Predictions/{img[:img.index(".")]}_Prediction.png")
         plt.show()
 
     except:
