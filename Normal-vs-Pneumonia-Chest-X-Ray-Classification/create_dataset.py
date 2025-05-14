@@ -6,31 +6,30 @@ import numpy as np
 from config import DATA_FOLDER, CLASSES, IMAGE_SIZE
 
 
-def resize_image(image_array):
+def resize_image(image_array):    
     # Resize the image preserving aspect ratio (shorter side becomes new_size pixels)
     h, w = image_array.shape
     factor = IMAGE_SIZE / min(h, w)
     h, w = math.ceil(h * factor), math.ceil(w * factor)
     image_array = cv2.resize(image_array, (w, h), interpolation=cv2.INTER_AREA)
 
-    # Retain a new_size × new_size part from the center of the image
+    # Retain IMAGE_SIZE x IMAGE_SIZE part from the center of the image
     x_start = (w - IMAGE_SIZE) // 2
     y_start = (h - IMAGE_SIZE) // 2
     image_array = image_array[y_start : y_start + IMAGE_SIZE, x_start : x_start + IMAGE_SIZE]
 
     return image_array
 
+
 def rotate_image(image_array, max_angle):
     # Rotate image by a random angle between -(max_angle) and +(max_angle) degrees
     rot_angle = random.uniform(-max_angle, max_angle)
     rot_matrix = cv2.getRotationMatrix2D(center=(IMAGE_SIZE // 2, IMAGE_SIZE // 2),
                                          angle=rot_angle, scale=1.0)
-
-    image_array = cv2.warpAffine(image_array, rot_matrix, (IMAGE_SIZE, IMAGE_SIZE),
-                                 flags=cv2.INTER_LINEAR,
-                                 borderMode=cv2.BORDER_REFLECT_101)
     
-    return image_array
+    return cv2.warpAffine(image_array, rot_matrix, (IMAGE_SIZE, IMAGE_SIZE),
+                          flags=cv2.INTER_LINEAR,
+                          borderMode=cv2.BORDER_REFLECT_101)
 
 def adjust_image_contrast_and_brightness(image_array, max_contrast_shift, max_brightness_shift):
     # Contrast adjustment
@@ -38,9 +37,7 @@ def adjust_image_contrast_and_brightness(image_array, max_contrast_shift, max_br
     # Brightness adjustment
     beta = random.uniform(-max_brightness_shift, max_brightness_shift)
 
-    image_array = cv2.convertScaleAbs(image_array, alpha=alpha, beta=beta)
-
-    return image_array
+    return cv2.convertScaleAbs(image_array, alpha=alpha, beta=beta)
 
 
 """
@@ -81,10 +78,10 @@ for label, img_class in enumerate(CLASSES):
                 img_array = resize_image(img_array)
                 # Rotate the image by a random angle between -10 and +10 degrees
                 img_array = rotate_image(img_array, max_angle=10)
-                # Adjust contrast and brightness by upto 10%
+                # Adjust contrast and brightness by upto 15%
                 img_array = adjust_image_contrast_and_brightness(img_array,
-                                                                 max_contrast_shift=0.1,
-                                                                 max_brightness_shift=10)
+                                                                 max_contrast_shift=0.15,
+                                                                 max_brightness_shift=15)
 
                 X_train.append(img_array)
                 y_train.append(label)
