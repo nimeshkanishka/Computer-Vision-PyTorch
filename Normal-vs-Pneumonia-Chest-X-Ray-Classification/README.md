@@ -2,4 +2,4 @@ Dataset Used: Chest X-Ray Images (Pneumonia) Dataset (https://www.kaggle.com/dat
 
 Number of Classes: 2 (Normal and Pneumonia)
 
-Custom Network Test Accuracy: 89.42%
+Custom Network Test Accuracy: 88.14%
