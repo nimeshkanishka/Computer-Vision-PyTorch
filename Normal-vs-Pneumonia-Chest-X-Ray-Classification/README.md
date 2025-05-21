@@ -4,6 +4,6 @@ Number of Classes: 2 (Normal and Pneumonia)
 
 Custom Network Test Accuracy: 88.78%
 
-EfficientNet-B0 + Custom Classification Module Test Accuracy: 87.98%
+EfficientNet-B0 + Custom Classification Module Test Accuracy: 88.14%
 
-ResNet-50 + Custom Classification Module Test Accuracy: 87.66%
+ResNet-50 + Custom Classification Module Test Accuracy: 90.54%
