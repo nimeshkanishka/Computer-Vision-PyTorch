@@ -69,7 +69,7 @@ match NETWORK:
 
 # Training, validation and test tensor datasets
 # X: Shape: [num_images, img_size, img_size, num_channels] -> [num_images, num_channels, img_size, img_size]
-#    Dtype: float32 (Each channel of the images is normalized to the ImageNet mean and std)
+#    Dtype: float32 (Each channel of the images is normalized to the mean and std of training images)
 # y: Shape: [num_images]
 #    Dtype: float32
 train_dataset = TensorDataset((torch.from_numpy(X_train).permute(0, 3, 1, 2).float() / 255.0 - mean) / std,
