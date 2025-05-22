@@ -65,7 +65,7 @@ match NETWORK:
         std = torch.tensor([0.229, 0.224, 0.225], dtype=torch.float32).view(1, -1, 1, 1) # [3] -> [1, 3, 1, 1]
 
     case _:
-        raise ValueError(f"Unsupported network architecture: '{NETWORK}'. Choose from 'Custom' or 'EfficientNet-B0'.")
+        raise ValueError(f"Unsupported network architecture: '{NETWORK}'. Choose from 'Custom', 'EfficientNet-B0' or 'ResNet-50'.")
 
 # Training, validation and test tensor datasets
 # X: Shape: [num_images, img_size, img_size, num_channels] -> [num_images, num_channels, img_size, img_size]
