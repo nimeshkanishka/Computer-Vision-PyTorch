@@ -7,8 +7,8 @@ from config import DATA_FOLDER, CLASSES, IMAGE_SIZE, RGB
 
 
 def resize_image(image_array):    
-    # Resize the image preserving aspect ratio (shorter side becomes new_size pixels)
-    # image_array will have 3 dims (if the image is loaded in RGB format) or 2 dims (if the image is loaded in grayscale format)
+    # Resize the image preserving aspect ratio (shorter side becomes IMAGE_SIZE pixels)
+    # image_array will have 3 dims if the image is loaded in RGB format or 2 dims if the image is loaded in grayscale format
     if len(image_array.shape) == 3:
         h, w, _ = image_array.shape
     else:
