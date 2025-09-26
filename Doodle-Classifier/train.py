@@ -8,12 +8,12 @@ import matplotlib.pyplot as plt
 from tqdm import tqdm
 from network import ClassifierNetwork
 
-########## CONFIG ##########
+#################### CONFIG ####################
 BATCH_SIZE = 64
 NUM_EPOCHS = 25
 LEARNING_RATE = 1e-3
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-############################
+################################################
 
 # Define transforms
 # Add random scaling, rotation and offsets to training images
