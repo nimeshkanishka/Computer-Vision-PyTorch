@@ -5,7 +5,7 @@ import torch
 from torchvision import transforms
 from network import ClassifierNetwork
 
-########## CONFIG ##########
+#################### CONFIG ####################
 WINDOW_WIDTH, WINDOW_HEIGHT = 1200, 750
 CANVAS_SIZE = 650
 BG_COLOR = (50, 50, 75)
@@ -27,7 +27,7 @@ CLASSES = {
     8: "Bowtie",
     9: "Broccoli"
 }
-############################
+################################################
 
 # Load saved model checkpoint
 model = ClassifierNetwork().to(DEVICE)
@@ -75,7 +75,10 @@ def get_prediction(surface):
 
 # Main loop
 canvas_pos = (WINDOW_HEIGHT - CANVAS_SIZE) // 2
-is_drawing, is_erasing = False, False
+is_drawing = False
+is_erasing = False
+# Update prediction only when user draws, erases or clears canvas
+update_prediction = True
 running = True
 while running:
     # Background color
@@ -107,6 +110,8 @@ while running:
         elif event.type == pygame.KEYDOWN:
             if event.key == pygame.K_c:
                 canvas.fill(CANVAS_COLOR)
+                # We have to update prediction after clearing the canvas
+                update_prediction = True
 
     # Drawing/Erasing
     if is_drawing or is_erasing:
@@ -119,10 +124,14 @@ while running:
             pos = (x - 20, y - 20)
             color = DRAW_COLOR if is_drawing else CANVAS_COLOR
             pygame.draw.circle(canvas, color, pos, radius=20)
+            # We have to update prediction after drawing/erasing on the canvas
+            update_prediction = True
 
-    # Get model predictions
-    probs = get_prediction(canvas)
-    top_indices = probs.argsort()[::-1]
+    # Get model predictions only if there has been a change in the canvas
+    if update_prediction:
+        probabilities = get_prediction(canvas)
+        top_indices = probabilities.argsort()[::-1]
+        update_prediction = False
 
     # Display predictions
     for i, idx in enumerate(top_indices[:10]):
@@ -132,7 +141,7 @@ while running:
             class_label,
             (canvas_pos + CANVAS_SIZE + 50, canvas_pos + 45 + i * 55)
         )
-        confidence_label = font_large.render(f"{probs[idx] * 100:.2f}%", True, color)
+        confidence_label = font_large.render(f"{probabilities[idx] * 100:.2f}%", True, color)
         screen.blit(
             confidence_label,
             (canvas_pos + CANVAS_SIZE + 300, canvas_pos + 45 + i * 55)
