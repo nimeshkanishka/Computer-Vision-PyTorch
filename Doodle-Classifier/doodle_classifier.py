@@ -14,8 +14,8 @@ DRAW_COLOR = (255, 255, 255)
 TEXT_COLOR_1 = (255, 255, 255)
 TEXT_COLOR_2 = (150, 150, 150)
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-# Label to class mapping
-CLASSES = {
+# Label to category mapping
+CATEGORIES = {
     0: "Airplane",
     1: "Angel",
     2: "Ant",
@@ -45,33 +45,35 @@ transform = transforms.Compose([
     )
 ])
 
+
+def get_prediction(image_data):
+    # Pygame Surface returns array of shape (W, H, C), but Pillow expects (H, W, C)
+    image_data = np.transpose(image_data, (1, 0, 2))
+    # Convert array to Pillow Image object
+    image = Image.fromarray(image_data)
+    # Apply transforms and add batch dimension to the tensor
+    # Final shape: (1, C, H, W)
+    image = transform(image).unsqueeze(dim=0).to(DEVICE)
+    # Get model predictions
+    with torch.no_grad():
+        logits = model(image) # (1, 10)
+        probs = torch.softmax(logits, dim=1).squeeze().cpu().numpy() # (10,)
+    return probs
+
+
 # Pygame setup
 pygame.init()
+
 screen = pygame.display.set_mode((WINDOW_WIDTH, WINDOW_HEIGHT))
 pygame.display.set_caption("DrawIt! - Doodle Classifier")
+
 clock = pygame.time.Clock()
+
 font_large = pygame.font.SysFont("Arial", 50)
 font_small = pygame.font.SysFont("Arial", 25)
 
 canvas = pygame.Surface((CANVAS_SIZE, CANVAS_SIZE))
 canvas.fill(CANVAS_COLOR)
-
-
-def get_prediction(surface):
-    # Convert pygame surface -> PIL -> Tensor
-    data = pygame.surfarray.array3d(surface) # (W, H, C)
-    data = np.transpose(data, (1, 0, 2)) # -> (H, W, C)
-
-    img = Image.fromarray(data)
-
-    img = transform(img).unsqueeze(dim=0).to(DEVICE) # -> (B, C, H, W)
-
-    # Get model predictions
-    with torch.no_grad():
-        logits = model(img) # (1, 10)
-        probs = torch.softmax(logits, dim=1).squeeze().cpu().numpy() # (10,)
-    return probs
-
 
 # Main loop
 canvas_pos = (WINDOW_HEIGHT - CANVAS_SIZE) // 2
@@ -121,7 +123,7 @@ while running:
         if (canvas_pos <= x < canvas_pos + CANVAS_SIZE) and \
             (canvas_pos <= y < canvas_pos + CANVAS_SIZE):
             # Get mouse position on canvas
-            pos = (x - 20, y - 20)
+            pos = (x - canvas_pos, y - canvas_pos)
             color = DRAW_COLOR if is_drawing else CANVAS_COLOR
             pygame.draw.circle(canvas, color, pos, radius=20)
             # We have to update prediction after drawing/erasing on the canvas
@@ -129,16 +131,20 @@ while running:
 
     # Get model predictions only if there has been a change in the canvas
     if update_prediction:
-        probabilities = get_prediction(canvas)
+        canvas_pixel_data = pygame.surfarray.array3d(canvas)
+        probabilities = get_prediction(canvas_pixel_data)
+        # Get indices of categories sorted by probability in descending order
+        # We need this to display categories in descending order of confidence
         top_indices = probabilities.argsort()[::-1]
+        # Reset flag
         update_prediction = False
 
     # Display predictions
     for i, idx in enumerate(top_indices[:10]):
         color = TEXT_COLOR_1 if i == 0 else TEXT_COLOR_2
-        class_label = font_large.render(f"{CLASSES[idx]}", True, color)
+        category_label = font_large.render(f"{CATEGORIES[idx]}", True, color)
         screen.blit(
-            class_label,
+            category_label,
             (canvas_pos + CANVAS_SIZE + 50, canvas_pos + 45 + i * 55)
         )
         confidence_label = font_large.render(f"{probabilities[idx] * 100:.2f}%", True, color)
