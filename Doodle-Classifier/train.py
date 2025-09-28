@@ -11,7 +11,7 @@ from network import ClassifierNetwork
 #################### CONFIG ####################
 BATCH_SIZE = 64
 NUM_EPOCHS = 25
-LEARNING_RATE = 1e-3
+LEARNING_RATE = 2.5e-3
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 ################################################
 
@@ -82,15 +82,33 @@ train_loader = DataLoader(train_dataset, batch_size=BATCH_SIZE, shuffle=True)
 val_loader = DataLoader(val_dataset, batch_size=BATCH_SIZE, shuffle=False)
 test_loader = DataLoader(test_dataset, batch_size=BATCH_SIZE, shuffle=False)
 
-# Define model and optimizer
+# Define model, optimizer and learning rate scheduler
 model = ClassifierNetwork().to(DEVICE)
-optimizer = torch.optim.Adam(model.parameters(), lr=LEARNING_RATE)
+optimizer = torch.optim.AdamW(model.parameters(), lr=LEARNING_RATE, weight_decay=1e-4)
+scheduler = torch.optim.lr_scheduler.OneCycleLR(
+    optimizer,
+    max_lr=LEARNING_RATE,
+    epochs=NUM_EPOCHS,
+    steps_per_epoch=len(train_loader),
+    pct_start=0.3,
+    anneal_strategy="cos",
+    div_factor=10,
+    final_div_factor=1e4
+)
 
+# Number of epochs during which OneCycleLR scheduler increases the learning rate
+warmup_epochs = int(NUM_EPOCHS * 0.3)
+# Variables to keep track of best validation loss and accuracy to save model checkpoints
+best_val_loss = float("inf")
+best_val_accuracy = 0.0
 # Lists to keep track of loss and accuracy at each epoch
 train_loss_history = []
 train_acc_history = []
 val_loss_history = []
 val_acc_history = []
+
+# Create directory to save model checkpoints if it doesn't exist
+os.makedirs("Doodle-Classifier/models", exist_ok=True)
 
 # Training loop
 for epoch in range(NUM_EPOCHS):
@@ -116,6 +134,7 @@ for epoch in range(NUM_EPOCHS):
         optimizer.zero_grad()
         loss.backward()
         optimizer.step()
+        scheduler.step()
 
     train_loss = total_loss / len(train_loader)
     train_loss_history.append(train_loss)
@@ -145,9 +164,12 @@ for epoch in range(NUM_EPOCHS):
     val_acc_history.append(val_acc)
     print(f"Validation loss: {val_loss:.4f} - Validation accuracy: {(val_acc * 100):.2f}%")
 
-# Save model weights
-os.makedirs("Doodle-Classifier/models", exist_ok=True)
-torch.save(model.state_dict(), "Doodle-Classifier/models/model_checkpoint.pth")
+    # Save model checkpoint if validation loss has decreased or validation accuracy has increased
+    if epoch > warmup_epochs and (val_loss < best_val_loss or val_acc > best_val_accuracy):
+        best_val_loss = min(val_loss, best_val_loss)
+        best_val_accuracy = max(val_acc, best_val_accuracy)        
+        torch.save(model.state_dict(), "Doodle-Classifier/models/model_checkpoint.pth")
+        print("Saved model checkpoint!")
 
 # Plot training and validation loss and accuracy graphs
 fig, axes = plt.subplots(1, 2, figsize=(15, 5))
@@ -174,6 +196,8 @@ plt.savefig("Doodle-Classifier/training/loss_accuracy_vs_epoch.png")
 plt.show()
 
 # Testing
+# Load saved checkpoint of the best model and set to evaluation mode
+model.load_state_dict(torch.load("Doodle-Classifier/models/model_checkpoint.pth"))
 model.eval()
 
 total_loss = 0.0
