@@ -10,7 +10,7 @@ from network import ClassifierNetwork
 
 #################### CONFIG ####################
 BATCH_SIZE = 64
-NUM_EPOCHS = 25
+NUM_EPOCHS = 30
 LEARNING_RATE = 2.5e-3
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 ################################################
@@ -90,14 +90,14 @@ scheduler = torch.optim.lr_scheduler.OneCycleLR(
     max_lr=LEARNING_RATE,
     epochs=NUM_EPOCHS,
     steps_per_epoch=len(train_loader),
-    pct_start=0.3,
+    pct_start=0.25,
     anneal_strategy="cos",
     div_factor=10,
-    final_div_factor=1e4
+    final_div_factor=2.5e4
 )
 
 # Number of epochs during which OneCycleLR scheduler increases the learning rate
-warmup_epochs = int(NUM_EPOCHS * 0.3)
+warmup_epochs = int(NUM_EPOCHS * 0.25)
 # Variables to keep track of best validation loss and accuracy to save model checkpoints
 best_val_loss = float("inf")
 best_val_accuracy = 0.0
